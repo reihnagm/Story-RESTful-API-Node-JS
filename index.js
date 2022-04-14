@@ -54,10 +54,15 @@ app.post("/auth/sign-in", async (req, res) => {
   let phone = req.body.phone 
   let pass = req.body.pass
   try {
-    let signInD = await signIn(phone, pass)
+    let signIn = await signIn(phone, pass)
     return res.json({
       "status": res.statusCode,
-      "data": signInD
+      "data": {
+        "uid": signIn.uid,
+        "fullname": signIn.fullname,
+        "pic": signIn.pic,
+        "phone": signIn.phone
+      }
     })
   } catch(e) {
     console.log(e)
@@ -299,7 +304,7 @@ app.get("*", (req, res) => {
   res.sendStatus(404)
 })
 
-const port = 3001;
+const port = 3000;
 app.listen(port, function (e) {
   if (e) throw e
   console.log('Listening on port %d', port);
