@@ -54,14 +54,14 @@ app.post("/auth/sign-in", async (req, res) => {
   let phone = req.body.phone 
   let pass = req.body.pass
   try {
-    let signIn = await signIn(phone, pass)
+    let signInD = await signIn(phone, pass)
     return res.json({
       "status": res.statusCode,
       "data": {
-        "uid": signIn.uid,
-        "fullname": signIn.fullname,
-        "pic": signIn.pic,
-        "phone": signIn.phone
+        "uid": signInD.uid,
+        "fullname": signInD.fullname,
+        "pic": signInD.pic,
+        "phone": signInD.phone
       }
     })
   } catch(e) {
