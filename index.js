@@ -95,41 +95,40 @@ app.get("/story", async (req, res) => {
   try {
     let storiesUser = await getStoriesUser()
     let stories = await getStories()
-    let itemsAssign = []
-    for (const k in stories) {
-      itemsAssign.push({
-        "uid": stories[k].uid,
-        "caption": stories[k].caption, 
-        "media": stories[k].media,
-        "type": stories[k].type
+    if(stories.length != 0) {
+      let itemsAssign = []
+      for (const k in stories) {
+        itemsAssign.push({
+          "uid": stories[k].uid,
+          "caption": stories[k].caption, 
+          "media": stories[k].media,
+          "type": stories[k].type,
+          "duration": stories[k].duration
+        })
+      } 
+      dataAssign.push({
+        "user": {
+          "uid": storiesUser.uid,
+          "fullname": storiesUser.fullname,
+          "pic": storiesUser.pic,
+          "created": moment(storiesUser.created).format('LT'),
+          "item_count": stories.length,
+          "items": itemsAssign
+        }
       })
-    } 
-    dataAssign.push({
-      "user": {
-        "uid": storiesUser.uid,
-        "fullname": storiesUser.fullname,
-        "pic": storiesUser.pic,
-        "created": moment(storiesUser.created).format('LT'),
-        "item_count": stories.length,
-        "items": itemsAssign
-      }
-    })
-    return res.json({
-      "status": res.statusCode,
-      "data": dataAssign
-    })
+      return res.json({
+        "status": res.statusCode,
+        "data": dataAssign
+      })
+    } else {
+      return res.json({
+        "status": res.statusCode,
+        "data": []
+      })
+    }
   } catch(e) {
     console.log(e)
   }
-})
-
-app.get("/story/count/:user_id", async (req, res) => {
-  let userId = req.params.user_id
-  let stories = await getStoriesCount(userId)
-  return res.json({
-    "status": res.statusCode,
-    "data": stories
-  })
 })
 
 app.post("/story/store", async (req, res) => {
@@ -139,6 +138,7 @@ app.post("/story/store", async (req, res) => {
   let storyUid = req.body.uid
   let caption = req.body.caption
   let fileType = req.body.type
+  let duration = req.body.duration
   let media = req.body.media
   let userId = req.body.user_id
 
@@ -160,7 +160,7 @@ app.post("/story/store", async (req, res) => {
   }
 
   try {
-    await storyStore(storyUid, caption, media, type)
+    await storyStore(storyUid, caption, media, type, duration)
     return res.json({
       "status": res.statusCode,
       "data": {
@@ -168,6 +168,8 @@ app.post("/story/store", async (req, res) => {
         "caption": caption,
         "media": media,
         "type": fileType,
+        "duration": duration,
+        "user_id": userId
       }
     })
   } catch(e) {
@@ -197,7 +199,7 @@ app.post("/upload", upload.single("media"), (req, res) => {
 function getStories() {
   return new Promise((resolve, reject) => {
     const query = `SELECT DISTINCT a.uid, a.caption, a.media, 
-      b.name AS type, d.fullname, d.pic, d.uid AS user_id, 
+      b.name AS type, a.duration, d.fullname, d.pic, d.uid AS user_id, 
       c.created_at AS created  
       FROM stories a 
       INNER JOIN story_types b ON a.type = b.id
@@ -286,10 +288,10 @@ function userStoryStore(uid, userId, storyId) {
   })
 }
 
-function storyStore(uid, caption, media, fileType) {
+function storyStore(uid, caption, media, fileType, duration) {
   return new Promise((resolve, reject) => {
-    const query = `INSERT INTO stories (uid, caption, media, type) 
-    VALUES ('${uid}', '${caption}', '${media}', '${fileType}')`
+    const query = `INSERT INTO stories (uid, caption, media, type, duration) 
+    VALUES ('${uid}', '${caption}', '${media}', '${fileType}', '${duration}')`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
@@ -309,3 +311,4 @@ app.listen(port, function (e) {
   if (e) throw e
   console.log('Listening on port %d', port);
 });
+app.keepAliveTimeout = 61 * 1000;
