@@ -8,7 +8,6 @@ const mysql = require("mysql")
 const helmet = require("helmet")
 const compression = require("compression")
 const multer = require("multer")
-const { json } = require("express/lib/response")
 
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
@@ -32,7 +31,7 @@ let conn = mysql.createConnection({
   user:'root',
   port: '3307',
   password:'cx2021!',
-  database: 'story'
+  database: 'story',
 })
 
 conn.connect(function(e) {
@@ -55,6 +54,14 @@ app.post("/auth/sign-in", async (req, res) => {
   let pass = req.body.pass
   try {
     let signInD = await signIn(phone, pass)
+    if(signInD  == null) {
+      return res.status(401).json({
+        "status": 401,
+        "data": {
+          "error": "Invalid Phone or Password"
+        }
+      })
+    }
     return res.json({
       "status": res.statusCode,
       "data": {
@@ -80,9 +87,10 @@ app.post("/auth/sign-up", async (req, res) => {
     return res.json({
       "status": res.statusCode,
       "data": {
+        "uid": uid,
         "fullname": fullname,
+        "pic": pic,
         "phone": phone,
-        "pic": pic
       }
     })
   } catch(e) {
@@ -149,6 +157,8 @@ app.post("/story/store", async (req, res) => {
     case "video":
       type = "2"
     break;
+    case "text": 
+      type = "3"
     default:
     break;
   }
@@ -180,14 +190,7 @@ app.post("/story/store", async (req, res) => {
 // MEDIA
 
 app.post("/upload", upload.single("media"), (req, res) => {
-  // let url = "";
   let file = req.file.filename
-  // let mimetype = req.file.mimetype
-  // if(mimetype == "image/jpeg") {
-  //   url = ""
-  // } else {
-  //   url = ""
-  // }
   return res.json({
     "status": res.statusCode, 
     "data": {
@@ -227,21 +230,6 @@ function getStoriesUser() {
         reject(new Error(e))
       } else {
         resolve(res[0])
-      }
-    })
-  })
-}
-
-
-
-function getStoriesCount(userId) {
-  return new Promise((resolve, reject) => {
-    const query = `SELECT COUNT(*) as total FROM stories WHERE user_id = '${userId}'`
-    conn.query(query, (e, res) => {
-      if(e) {
-        reject(new Error(e))
-      } else {
-        resolve(res)
       }
     })
   })
@@ -311,4 +299,3 @@ app.listen(port, function (e) {
   if (e) throw e
   console.log('Listening on port %d', port);
 });
-app.keepAliveTimeout = 61 * 1000;
