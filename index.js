@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
     }
   },
   filename: (req, file, callback) => {
-      callback(null, file.originalname)
+    callback(null, file.originalname)
   }
 })
 
@@ -164,13 +164,7 @@ app.post("/story/store", async (req, res) => {
   }
 
   try {
-    await userStoryStore(userStoryUid, userId, storyUid)
-  } catch(e) {
-    console.log(e)
-  }
-
-  try {
-    await storyStore(storyUid, caption, media, type, duration)
+    await userStoryStore(userStoryUid, userId, storyUid, caption, media, type, duration)
     return res.json({
       "status": res.statusCode,
       "data": {
@@ -262,16 +256,34 @@ function signUp(uid, fullname, phone, pass, pic) {
   })
 }
 
-function userStoryStore(uid, userId, storyId) {
+function userStoryStore(uid, userId, storyId, caption, media, fileType, duration) {
   return new Promise((resolve, reject) => {
-    const query = `INSERT INTO user_stories (uid, user_id, story_uid) 
-    VALUES ('${uid}', '${userId}', '${storyId}')`
-    conn.query(query, (e, res) => {
-      if(e) {
-        reject(new Error(e))
-      } else {
-        resolve(res)
-      }
+    conn.beginTransaction((e) => {
+      if (e) { reject(new Error(e)) }
+      conn.query(`INSERT INTO user_stories (uid, user_id, story_uid) 
+      VALUES ('${uid}', '${userId}', '${storyId}')`, (e, res) => {
+        if(e) {
+          return conn.rollback(function() {
+            reject(new Error(e))
+          })
+        }
+        conn.query(`INSERT INTO stories (uid, caption, media, type, duration) 
+        VALUES ('${storyId}', '${caption}', '${media}', '${fileType}', '${duration}')`, function (e, res) {
+          if (e) {
+            return conn.rollback(function() {
+              reject(new Error(e))
+            });
+          }
+          conn.commit(function(e) {
+            if (e) {
+              return connection.rollback(function() {
+                reject(new Error(e))
+              });
+            }
+            resolve("success")
+          });
+        });
+      })
     })
   })
 }
