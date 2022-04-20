@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
     }
   },
   filename: (req, file, callback) => {
-    callback(null, file.originalname)
+    callback(null, file.originalname.replace(file.originalname, Date.now() + `.${file.mimetype.split("/")[1]}`))
   }
 })
 
@@ -284,20 +284,6 @@ function userStoryStore(uid, userId, storyId, caption, media, fileType, duration
           });
         });
       })
-    })
-  })
-}
-
-function storyStore(uid, caption, media, fileType, duration) {
-  return new Promise((resolve, reject) => {
-    const query = `INSERT INTO stories (uid, caption, media, type, duration) 
-    VALUES ('${uid}', '${caption}', '${media}', '${fileType}', '${duration}')`
-    conn.query(query, (e, res) => {
-      if(e) {
-        reject(new Error(e))
-      } else {
-        resolve(res)
-      }
     })
   })
 }
