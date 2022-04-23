@@ -108,6 +108,7 @@ app.get("/story", async (req, res) => {
       for (const k in stories) {
         itemsAssign.push({
           "uid": stories[k].uid,
+          "backgroundColor": stories[k].backgroundColor,
           "caption": stories[k].caption, 
           "media": stories[k].media,
           "type": stories[k].type,
@@ -144,6 +145,7 @@ app.post("/story/store", async (req, res) => {
 
   let userStoryUid = req.body.user_story_uid
   let storyUid = req.body.uid
+  let backgroundColor = req.body.backgroundColor
   let caption = req.body.caption
   let fileType = req.body.type
   let duration = req.body.duration
@@ -164,11 +166,12 @@ app.post("/story/store", async (req, res) => {
   }
 
   try {
-    await userStoryStore(userStoryUid, userId, storyUid, caption, media, type, duration)
+    await userStoryStore(userStoryUid, userId, storyUid, backgroundColor, caption, media, type, duration)
     return res.json({
       "status": res.statusCode,
       "data": {
         "uid": storyUid,
+        "backgroundColor": backgroundColor,
         "caption": caption,
         "media": media,
         "type": fileType,
@@ -195,7 +198,7 @@ app.post("/upload", upload.single("media"), (req, res) => {
 
 function getStories() {
   return new Promise((resolve, reject) => {
-    const query = `SELECT DISTINCT a.uid, a.caption, a.media, 
+    const query = `SELECT DISTINCT a.uid, a.backgroundColor, a.caption, a.media, 
       b.name AS type, a.duration, d.fullname, d.pic, d.uid AS user_id, 
       c.created_at AS created  
       FROM stories a 
@@ -256,7 +259,7 @@ function signUp(uid, fullname, phone, pass, pic) {
   })
 }
 
-function userStoryStore(uid, userId, storyId, caption, media, fileType, duration) {
+function userStoryStore(uid, userId, storyId, backgroundColor, caption, media, fileType, duration) {
   return new Promise((resolve, reject) => {
     conn.beginTransaction((e) => {
       if (e) { reject(new Error(e)) }
@@ -267,8 +270,8 @@ function userStoryStore(uid, userId, storyId, caption, media, fileType, duration
             reject(new Error(e))
           })
         }
-        conn.query(`INSERT INTO stories (uid, caption, media, type, duration) 
-        VALUES ('${storyId}', '${caption}', '${media}', '${fileType}', '${duration}')`, function (e, res) {
+        conn.query(`INSERT INTO stories (uid, backgroundColor, caption, media, type, duration) 
+        VALUES ('${storyId}', '${backgroundColor}', '${caption}', '${media}', '${fileType}', '${duration}')`, function (e, res) {
           if (e) {
             return conn.rollback(function() {
               reject(new Error(e))
