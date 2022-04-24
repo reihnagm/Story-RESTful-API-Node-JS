@@ -11,10 +11,10 @@ const multer = require("multer")
 
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
-    if(file.mimetype == "image/jpeg") {
-    callback(null, "./public/images")
+    if(file.mimetype == "image/jpeg" || file.mimetype == "image/png" || file.mimetype == "image/gif") {
+      callback(null, "./public/images")
     } else {
-    callback(null, "./public/videos")
+      callback(null, "./public/videos")
     }
   },
   filename: (req, file, callback) => {
@@ -109,6 +109,13 @@ app.get("/story", async (req, res) => {
         itemsAssign.push({
           "uid": stories[k].uid,
           "backgroundColor": stories[k].backgroundColor,
+          "textColor": stories[k].textColor,
+          "user": {
+            "uid": storiesUser.uid,
+            "fullname": storiesUser.fullname,
+            "pic": storiesUser.pic,
+            "created": moment(stories[k].created).format('LT')
+          },
           "caption": stories[k].caption, 
           "media": stories[k].media,
           "type": stories[k].type,
@@ -140,12 +147,21 @@ app.get("/story", async (req, res) => {
   }
 })
 
+app.get("/story/expire", async (req, res) => {
+  await userStoryExpire()
+  return res.json({
+    "status": res.statusCode,
+    "data": "success"
+  })
+})
+
 app.post("/story/store", async (req, res) => {
   let type
 
   let userStoryUid = req.body.user_story_uid
   let storyUid = req.body.uid
   let backgroundColor = req.body.backgroundColor
+  let textColor = req.body.textColor
   let caption = req.body.caption
   let fileType = req.body.type
   let duration = req.body.duration
@@ -166,12 +182,13 @@ app.post("/story/store", async (req, res) => {
   }
 
   try {
-    await userStoryStore(userStoryUid, userId, storyUid, backgroundColor, caption, media, type, duration)
+    await userStoryStore(userStoryUid, userId, storyUid, backgroundColor, textColor, caption, media, type, duration)
     return res.json({
       "status": res.statusCode,
       "data": {
         "uid": storyUid,
         "backgroundColor": backgroundColor,
+        "textColor": textColor,
         "caption": caption,
         "media": media,
         "type": fileType,
@@ -198,7 +215,7 @@ app.post("/upload", upload.single("media"), (req, res) => {
 
 function getStories() {
   return new Promise((resolve, reject) => {
-    const query = `SELECT DISTINCT a.uid, a.backgroundColor, a.caption, a.media, 
+    const query = `SELECT DISTINCT a.uid, a.backgroundColor, a.textColor, a.caption, a.media, 
       b.name AS type, a.duration, d.fullname, d.pic, d.uid AS user_id, 
       c.created_at AS created  
       FROM stories a 
@@ -259,7 +276,7 @@ function signUp(uid, fullname, phone, pass, pic) {
   })
 }
 
-function userStoryStore(uid, userId, storyId, backgroundColor, caption, media, fileType, duration) {
+function userStoryStore(uid, userId, storyId, backgroundColor, textColor, caption, media, fileType, duration) {
   return new Promise((resolve, reject) => {
     conn.beginTransaction((e) => {
       if (e) { reject(new Error(e)) }
@@ -270,8 +287,8 @@ function userStoryStore(uid, userId, storyId, backgroundColor, caption, media, f
             reject(new Error(e))
           })
         }
-        conn.query(`INSERT INTO stories (uid, backgroundColor, caption, media, type, duration) 
-        VALUES ('${storyId}', '${backgroundColor}', '${caption}', '${media}', '${fileType}', '${duration}')`, function (e, res) {
+        conn.query(`INSERT INTO stories (uid, backgroundColor, textColor, caption, media, type, duration) 
+        VALUES ('${storyId}', '${backgroundColor}', '${textColor}', '${caption}', '${media}', '${fileType}', '${duration}')`, function (e, res) {
           if (e) {
             return conn.rollback(function() {
               reject(new Error(e))
@@ -289,6 +306,37 @@ function userStoryStore(uid, userId, storyId, backgroundColor, caption, media, f
       })
     })
   })
+}
+
+function userStoryExpire() {
+  return new Promise((resolve, reject) => {
+    conn.beginTransaction((e) => {
+      if (e) { reject(new Error(e)) }
+      conn.query(`DELETE FROM stories WHERE created_at<=DATE_SUB(NOW(), INTERVAL 1 DAY)`, (e, res) => {
+        if(e) {
+          return conn.rollback(function() {
+            reject(new Error(e))
+          })
+        }
+        conn.query(`DELETE FROM user_stories WHERE created_at<=DATE_SUB(NOW(), INTERVAL 1 DAY)`, function (e, res) {
+          if (e) {
+            return conn.rollback(function() {
+              reject(new Error(e))
+            });
+          }
+          conn.commit(function(e) {
+            if (e) {
+              return connection.rollback(function() {
+                reject(new Error(e))
+              });
+            }
+            resolve("success")
+          });
+        });
+      })
+    })
+  })
+
 }
 
 app.get("*", (req, res) => {
