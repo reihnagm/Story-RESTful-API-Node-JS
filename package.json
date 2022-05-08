@@ -1,5 +1,5 @@
 {
-  "name": "storystatus-RESTful-Node-JS",
+  "name": "Story-Status-RESTful-Node-JS",
   "version": "1.0.0",
   "description": "Story Status",
   "main": "index.js",
@@ -24,6 +24,7 @@
     "mysql": "^2.18.1",
     "request": "^2.88.2",
     "sequential-ids": "0.0.0",
-    "socket.io": "^2.4.1"
+    "socket.io": "^2.4.1",
+    "uuid": "^8.3.2"
   }
 }

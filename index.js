@@ -3,6 +3,7 @@ const cors = require("cors")
 const app = express()
 const logger = require("morgan")
 const moment = require("moment")
+const { v4: uuidv4 } = require('uuid')
 moment.locale('id')
 const mysql = require("mysql")
 const helmet = require("helmet")
@@ -38,7 +39,22 @@ conn.connect(function(e) {
   if (e) {
     return console.log(e.message);
   }
-  console.log('Connected to the MySQL Server');
+  console.log('Connected to the MySQL Server Story');
+});
+
+let conHog = mysql.createConnection({
+  host:'167.99.76.66',
+  user:'root',
+  port: '3307',
+  password:'cx2021!',
+  database: 'community_hog',
+})
+
+conHog.connect(function(e) {
+  if (e) {
+    return console.log(e.message);
+  }
+  console.log('Connected to the MySQL Server HOG');
 });
 
 app.use(cors())
@@ -92,6 +108,19 @@ app.post("/auth/sign-up", async (req, res) => {
         "pic": pic,
         "phone": phone,
       }
+    })
+  } catch(e) {
+    console.log(e)
+  }
+})
+
+app.get("/story/inboxes/:user_id", async (req, res) => {
+  try {
+    let userId = req.params.user_id
+    let inboxes = await getInboxStories(userId)
+    return res.json({
+      "status": res.statusCode,
+      "data": inboxes
     })
   } catch(e) {
     console.log(e)
@@ -201,6 +230,25 @@ app.post("/story/store", async (req, res) => {
   }
 })
 
+app.post("/story/store/inbox", (req, res) => {
+  let storyUid = req.body.uid
+
+  try {
+    let users = await getUsersHog()
+    for (const k in users) {
+      let userId = users[k].user_id
+      await storeInboxStories(uuidv4(), userId, storyUid)
+    }
+    return res.json({
+      "status": res.statusCode,
+      "data": {}
+    })
+  } catch(e) {
+    console.log(e)
+  }
+
+})
+
 // MEDIA
 
 app.post("/upload", upload.single("media"), (req, res) => {
@@ -212,6 +260,58 @@ app.post("/upload", upload.single("media"), (req, res) => {
     }
   })
 })
+
+function getUsersHog() {
+  return new Promise((resolve, reject) => {
+    const query = `SELECT user_id FROM users`
+    conHog.query(query, (e, res) => {
+      if(e) {
+        reject(new Error(e))
+      } else {
+        resolve(res)
+      }
+    })
+  })
+}
+
+function getInboxStories(userId) {
+  return new Promise((resolve, reject) => {
+    const query = `SELECT a.read FROM inbox_stories a WHERE a.user_id = '${userId}'`
+    conn.query(query, (e, res) => {
+      if(e) {
+        reject(new Error(e))
+      } else {
+        resolve(res[0])
+      }
+    })
+  }) 
+}
+
+function updateInboxStories(userId) {
+  return new Promise((resolve, reject) => {
+    const query = `UPDATE inbox_stories SET read = 1 WHERE user_id = '${userId}'`
+    conn.query(query, (e, res) => {
+      if(e) {
+        reject(new Error(e))
+      } else {
+        resolve(res)
+      }
+    })
+  })
+} 
+
+function storeInboxStories(uid, userId, storyUid) {
+  return new Promise((resolve, reject) => {
+    const query = `INSERT INTO inbox_stories (uid, user_id, story_uid) VALUES ('${uid}', '${userId}', '${storyUid}')`
+    conn.query(query, (e, res) => {
+      if(e) {
+        reject(new Error(e))
+      } else {
+        resolve(res)
+      }
+    })
+  })
+}
 
 function getStories() {
   return new Promise((resolve, reject) => {
