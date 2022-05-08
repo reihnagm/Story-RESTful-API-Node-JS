@@ -230,7 +230,7 @@ app.post("/story/store", async (req, res) => {
   }
 })
 
-app.post("/story/store/inbox", (req, res) => {
+app.post("/story/store/inbox", async (req, res) => {
   let storyUid = req.body.uid
 
   try {
