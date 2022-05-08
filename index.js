@@ -261,9 +261,9 @@ app.post("/upload", upload.single("media"), (req, res) => {
   })
 })
 
-function getUsersHog() {
+function getUsersHog(userId) {
   return new Promise((resolve, reject) => {
-    const query = `SELECT user_id FROM users`
+    const query = `SELECT user_id FROM users WHERE user_id != '${userId}'`
     conHog.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
