@@ -114,7 +114,7 @@ app.post("/auth/sign-up", async (req, res) => {
   }
 })
 
-app.get("/story/inboxes/:user_id", async (req, res) => {
+app.get("/story/inbox/:user_id", async (req, res) => {
   try {
     let userId = req.params.user_id
     let inboxes = await getInboxStories(userId)
