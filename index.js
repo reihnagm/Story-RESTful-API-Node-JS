@@ -351,8 +351,7 @@ function getStoriesUser() {
     const query = `SELECT p.user_id, p.fullname, p.profile_pic, s.created_at AS created
     FROM community_hog.profiles p 
     INNER JOIN user_stories s ON p.user_id  = s.user_id
-    WHERE s.created_at IN (SELECT MAX(us.created_at) FROM user_stories us)
-    GROUP BY p.user_id`
+    ORDER BY s.created_at DESC`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
