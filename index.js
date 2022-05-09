@@ -153,10 +153,10 @@ app.get("/story", async (req, res) => {
           "backgroundColor": stories[k].backgroundColor,
           "textColor": stories[k].textColor,
           "user": {
-            "uid": storiesUser.uid,
-            "fullname": storiesUser.fullname,
-            "pic": storiesUser.profile_pic,
-            "created": moment(stories[k].created).format('LT')
+            "uid": storiesUser[k].uid,
+            "fullname": storiesUser[k].fullname,
+            "pic": storiesUser[k].profile_pic,
+            "created": moment(storiesUser[k].created).format('LT')
           },
           "caption": stories[k].caption, 
           "media": stories[k].media,
@@ -356,7 +356,7 @@ function getStoriesUser() {
       if(e) {
         reject(new Error(e))
       } else {
-        resolve(res[0])
+        resolve(res)
       }
     })
   })
