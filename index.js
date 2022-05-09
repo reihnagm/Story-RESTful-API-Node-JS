@@ -359,7 +359,7 @@ function getStoriesUser() {
     FROM community_hog.profiles p 
     INNER JOIN user_stories s ON s.user_id  = p.user_id
     GROUP BY p.user_id
-    ORDER BY s.created_at ASC`
+    ORDER BY MAX(s.created_at) DESC`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
