@@ -10,6 +10,8 @@ const helmet = require("helmet")
 const compression = require("compression")
 const multer = require("multer")
 
+// WHERE s.created_at IN (SELECT MAX(us.created_at) FROM user_stories us)
+
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
     if(file.mimetype == "image/jpeg" || file.mimetype == "image/png" || file.mimetype == "image/gif") {
@@ -162,7 +164,7 @@ app.get("/story", async (req, res) => {
               "uid": storiesUser[k].uid,
               "fullname": storiesUser[k].fullname,
               "pic": storiesUser[k].profile_pic,
-              "created": moment(storiesUser[k].created).format('LT')
+              "created": moment(stories[z].created).format('LT')
             },
           })
         }
