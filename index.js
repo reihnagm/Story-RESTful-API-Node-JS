@@ -354,11 +354,12 @@ function getStories(userId) {
 
 function getStoriesUser() {
   return new Promise((resolve, reject) => {
-    const query = `SELECT DISTINCT p.user_id, p.fullname, p.profile_pic, s.created_at AS created
+    const query = `SELECT DISTINCT p.user_id, p.fullname, p.profile_pic, MAX(s.created_at) AS created
     FROM community_hog.profiles p 
     INNER JOIN user_stories s ON s.user_id  = p.user_id
     GROUP BY p.user_id
-    ORDER BY s.created_at DESC`
+    ORDER BY s.created_at IN (SELECT MAX(us.created_at) FROM user_stories us)
+    `
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
