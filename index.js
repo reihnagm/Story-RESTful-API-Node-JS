@@ -232,9 +232,10 @@ app.post("/story/store", async (req, res) => {
 
 app.post("/story/store/inbox", async (req, res) => {
   let storyUid = req.body.uid
+  let userId = req.body.user_id
 
   try {
-    let users = await getUsersHog()
+    let users = await getUsersHog(userId)
     for (const k in users) {
       let userId = users[k].user_id
       await storeInboxStories(uuidv4(), userId, storyUid)
@@ -281,7 +282,7 @@ function getInboxStories(userId) {
       if(e) {
         reject(new Error(e))
       } else {
-        resolve(res[0])
+        resolve(res)
       }
     })
   }) 
