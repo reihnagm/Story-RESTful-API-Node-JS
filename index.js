@@ -341,7 +341,8 @@ function getStories(userId) {
     INNER JOIN user_stories c ON a.uid = c.story_uid
     INNER JOIN community_hog.profiles p ON p.user_id = c.user_id 
     WHERE p.user_id = '${userId}'
-    GROUP BY c.uid`
+    GROUP BY c.uid
+    ORDER BY c.created_at ASC`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
@@ -358,8 +359,7 @@ function getStoriesUser() {
     FROM community_hog.profiles p 
     INNER JOIN user_stories s ON s.user_id  = p.user_id
     GROUP BY p.user_id
-    ORDER BY s.created_at IN (SELECT MAX(us.created_at) FROM user_stories us)
-    `
+    ORDER BY s.created_at DESC`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
