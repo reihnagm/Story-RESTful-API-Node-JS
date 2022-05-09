@@ -141,42 +141,44 @@ app.put("/story/inbox/:user_id", async (req, res) => {
 })
 
 app.get("/story", async (req, res) => {
-  let dataAssign = []
   try {
     let storiesUser = await getStoriesUser()
-    let stories = await getStories()
-    if(stories.length != 0) {
-      let itemsAssign = []
-      for (const k in stories) {
-        itemsAssign.push({
-          "uid": stories[k].uid,
-          "backgroundColor": stories[k].backgroundColor,
-          "textColor": stories[k].textColor,
-          "user": {
-            "uid": storiesUser[k].uid,
-            "fullname": storiesUser[k].fullname,
-            "pic": storiesUser[k].profile_pic,
-            "created": moment(storiesUser[k].created).format('LT')
-          },
-          "caption": stories[k].caption, 
-          "media": stories[k].media,
-          "type": stories[k].type,
-          "duration": stories[k].duration
+    if(storiesUser.length != 0) {
+      let users = {}
+      let itemsUserAssign = []
+      for (const k in storiesUser) {
+        let stories = await getStories(storiesUser[k].user_id)
+        let itemsDataAssign = []
+        for (const z in stories) {
+          itemsDataAssign.push({
+            "uid": stories[z].uid,
+            "backgroundColor": stories[z].backgroundColor,
+            "textColor": stories[z].textColor,
+            "caption": stories[z].caption, 
+            "media": stories[z].media,
+            "type": stories[z].type,
+            "duration": stories[z].duration,
+            "user": {
+              "uid": storiesUser[k].uid,
+              "fullname": storiesUser[k].fullname,
+              "pic": storiesUser[k].profile_pic,
+              "created": moment(storiesUser[k].created).format('LT')
+            },
+          })
+        }
+        itemsUserAssign.push({
+          "uid": storiesUser[k].uid,
+          "fullname": storiesUser[k].fullname,
+          "pic": storiesUser[k].profile_pic,
+          "created": moment(storiesUser[k].created).format('LT'),
+          "item_count": stories.length,
+          "items": itemsDataAssign
         })
       } 
-      dataAssign.push({
-        "user": {
-          "uid": storiesUser.uid,
-          "fullname": storiesUser.fullname,
-          "pic": storiesUser.profile_pic,
-          "created": moment(storiesUser.created).format('LT'),
-          "item_count": stories.length,
-          "items": itemsAssign
-        }
-      })
+      users = itemsUserAssign
       return res.json({
         "status": res.statusCode,
-        "data": dataAssign
+        "data": users
       })
     } else {
       return res.json({
@@ -327,15 +329,17 @@ function storeInboxStories(uid, userId, storyUid) {
   })
 }
 
-function getStories() {
+function getStories(userId) {
   return new Promise((resolve, reject) => {
     const query = `SELECT DISTINCT a.uid, a.backgroundColor, a.textColor, a.caption, a.media, 
-    b.name AS type, a.duration, p.fullname, p.profile_pic, p.user_id, 
+    b.name AS type, a.duration, p.fullname, p.address, p.profile_pic, p.user_id, 
     c.created_at AS created  
     FROM stories a 
     INNER JOIN story_types b ON a.type = b.id
     INNER JOIN user_stories c ON a.uid = c.story_uid
-    INNER JOIN community_hog.profiles p ON c.user_id = p.user_id`
+    INNER JOIN community_hog.profiles p ON p.user_id = c.user_id 
+    WHERE p.user_id = '${userId}'
+    GROUP BY c.uid`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
@@ -348,9 +352,10 @@ function getStories() {
 
 function getStoriesUser() {
   return new Promise((resolve, reject) => {
-    const query = `SELECT p.user_id, p.fullname, p.profile_pic, s.created_at AS created
+    const query = `SELECT DISTINCT p.user_id, p.fullname, p.profile_pic, s.created_at AS created
     FROM community_hog.profiles p 
-    INNER JOIN user_stories s ON p.user_id  = s.user_id
+    INNER JOIN user_stories s ON s.user_id  = p.user_id
+    GROUP BY p.user_id
     ORDER BY s.created_at DESC`
     conn.query(query, (e, res) => {
       if(e) {
