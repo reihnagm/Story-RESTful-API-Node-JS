@@ -303,7 +303,7 @@ function getInboxStories(userId) {
 
 function updateInboxStories(userId) {
   return new Promise((resolve, reject) => {
-    const query = `UPDATE inbox_stories SET read = 1 WHERE user_id = '${userId}'`
+    const query = `UPDATE inbox_stories s SET s.read = 1 WHERE s.user_id = '${userId}'`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
