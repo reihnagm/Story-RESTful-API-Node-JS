@@ -127,6 +127,19 @@ app.get("/story/inbox/:user_id", async (req, res) => {
   }
 })
 
+app.put("/story/inbox/:user_id", async (req, res) => {
+  try {
+    let userId = req.params.user_id
+    await updateInboxStories(userId)
+    return res.json({
+      "status": res.statusCode,
+      "data": {}
+    })
+  } catch(e) {
+    console.log(e)
+  }
+})
+
 app.get("/story", async (req, res) => {
   let dataAssign = []
   try {
@@ -277,7 +290,7 @@ function getUsersHog(userId) {
 
 function getInboxStories(userId) {
   return new Promise((resolve, reject) => {
-    const query = `SELECT a.read FROM inbox_stories a WHERE a.user_id = '${userId}'`
+    const query = `SELECT a.read FROM inbox_stories a WHERE a.user_id = '${userId}' AND a.read = 0`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
