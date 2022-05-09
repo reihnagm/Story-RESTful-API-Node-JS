@@ -142,7 +142,7 @@ app.get("/story", async (req, res) => {
           "user": {
             "uid": storiesUser.uid,
             "fullname": storiesUser.fullname,
-            "pic": storiesUser.pic,
+            "pic": storiesUser.profile_pic,
             "created": moment(stories[k].created).format('LT')
           },
           "caption": stories[k].caption, 
@@ -155,7 +155,7 @@ app.get("/story", async (req, res) => {
         "user": {
           "uid": storiesUser.uid,
           "fullname": storiesUser.fullname,
-          "pic": storiesUser.pic,
+          "pic": storiesUser.profile_pic,
           "created": moment(storiesUser.created).format('LT'),
           "item_count": stories.length,
           "items": itemsAssign
@@ -316,12 +316,12 @@ function storeInboxStories(uid, userId, storyUid) {
 function getStories() {
   return new Promise((resolve, reject) => {
     const query = `SELECT DISTINCT a.uid, a.backgroundColor, a.textColor, a.caption, a.media, 
-      b.name AS type, a.duration, d.fullname, d.pic, d.uid AS user_id, 
-      c.created_at AS created  
-      FROM stories a 
-      INNER JOIN story_types b ON a.type = b.id
-      INNER JOIN user_stories c ON a.uid = c.story_uid
-      INNER JOIN users d ON c.user_id = d.uid`
+    b.name AS type, a.duration, p.fullname, p.profile_pic, p.user_id, 
+    c.created_at AS created  
+    FROM stories a 
+    INNER JOIN story_types b ON a.type = b.id
+    INNER JOIN user_stories c ON a.uid = c.story_uid
+    INNER JOIN community_hog.profiles p ON c.user_id = p.user_id`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
@@ -334,11 +334,11 @@ function getStories() {
 
 function getStoriesUser() {
   return new Promise((resolve, reject) => {
-    const query = `SELECT a.uid, a.fullname, a.pic, s.created_at AS created
-    FROM users a 
-    INNER JOIN user_stories s ON a.uid = s.user_id
+    const query = `SELECT p.user_id, p.fullname, p.profile_pic, s.created_at AS created
+    FROM community_hog.profiles p 
+    INNER JOIN user_stories s ON p.user_id  = s.user_id
     WHERE s.created_at IN (SELECT MAX(us.created_at) FROM user_stories us)
-    GROUP BY a.uid`
+    GROUP BY p.user_id`
     conn.query(query, (e, res) => {
       if(e) {
         reject(new Error(e))
