@@ -225,6 +225,20 @@ app.get("/story/self/:user_id/items", async (req, res) => {
   }
 })
 
+app.delete("/story/self/:user_id/items/:item_id", async (req, res) => {
+  let userId = req.params.user_id
+  let itemId = req.params.item_id
+  await deleteSelfStories(userId, itemId)
+  try {
+    return res.json({
+      "status": res.statusCode,
+      "data": {}
+    })
+  } catch(e) {
+    console.log(e)
+  }
+})
+
 app.get("/story/self/:user_id", async (req, res) => {
   try {
     let userId = req.params.user_id
@@ -387,6 +401,36 @@ function getItemStories(userId) {
       }
     })
   }) 
+}
+
+function deleteSelfStories(userId, storyUid) {
+  return new Promise((resolve, reject) => {
+    conn.beginTransaction((e) => {
+      if (e) { reject(new Error(e)) }
+      conn.query(`DELETE FROM stories WHERE uid = '${storyUid}'`, (e, res) => {
+        if(e) {
+          return conn.rollback(function() {
+            reject(new Error(e))
+          })
+        }
+        conn.query(`DELETE FROM user_stories WHERE story_uid = '${storyUid}' AND user_id = '${userId}'`, function (e, res) {
+          if (e) {
+            return conn.rollback(function() {
+              reject(new Error(e))
+            });
+          }
+          conn.commit(function(e) {
+            if (e) {
+              return connection.rollback(function() {
+                reject(new Error(e))
+              });
+            }
+            resolve("success")
+          });
+        });
+      })
+    })
+  })
 }
 
 function getInboxStories(userId) {
