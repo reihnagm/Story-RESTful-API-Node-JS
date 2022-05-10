@@ -116,75 +116,6 @@ app.post("/auth/sign-up", async (req, res) => {
   }
 })
 
-app.get("/story/inbox/:user_id", async (req, res) => {
-  try {
-    let userId = req.params.user_id
-    let inboxes = await getInboxStories(userId)
-    return res.json({
-      "status": res.statusCode,
-      "data": inboxes
-    })
-  } catch(e) {
-    console.log(e)
-  }
-})
-
-app.put("/story/inbox/:user_id", async (req, res) => {
-  try {
-    let userId = req.params.user_id
-    await updateInboxStories(userId)
-    return res.json({
-      "status": res.statusCode,
-      "data": {}
-    })
-  } catch(e) {
-    console.log(e)
-  }
-})
-
-app.get("/story/self/:user_id", async (req, res) => {
-  try {
-    let userId = req.params.user_id
-    let selfStories = await getSelfStories(userId)
-    let users = {}
-    let itemsDataAssign = []
-    let stories = await getStories(selfStories.user_id)
-    for (const z in stories) {
-      itemsDataAssign.push({
-        "uid": stories[z].uid,
-        "backgroundColor": stories[z].backgroundColor,
-        "textColor": stories[z].textColor,
-        "caption": stories[z].caption, 
-        "media": stories[z].media,
-        "type": stories[z].type,
-        "duration": stories[z].duration,
-        "user": {
-          "uid": selfStories.uid,
-          "fullname": selfStories.fullname,
-          "pic": selfStories.profile_pic,
-          "created": moment(stories[z].created).format('LT')
-        },
-      }) 
-    }
-    users = {
-      "user": {
-        "uid": selfStories.user_id,
-        "fullname": selfStories.fullname,
-        "pic": selfStories.profile_pic,
-        "created": moment(selfStories.created).format('LT')
-      },
-      "item_count": stories.length,
-      "items": itemsDataAssign
-    }
-    return res.json({
-      "status": res.statusCode,
-      "data": users
-    })
-  } catch(e) {
-    console.log(e)
-  }
-})
-
 app.get("/story", async (req, res) => {
   try {
     let storiesUser = await getStoriesUser()
@@ -231,6 +162,107 @@ app.get("/story", async (req, res) => {
         "data": []
       })
     }
+  } catch(e) {
+    console.log(e)
+  }
+})
+
+app.get("/story/inbox/:user_id", async (req, res) => {
+  try {
+    let userId = req.params.user_id
+    let inboxes = await getInboxStories(userId)
+    return res.json({
+      "status": res.statusCode,
+      "data": inboxes
+    })
+  } catch(e) {
+    console.log(e)
+  }
+})
+
+app.put("/story/inbox/:user_id", async (req, res) => {
+  try {
+    let userId = req.params.user_id
+    await updateInboxStories(userId)
+    return res.json({
+      "status": res.statusCode,
+      "data": {}
+    })
+  } catch(e) {
+    console.log(e)
+  }
+})
+
+app.get("/story/self/:user_id/items", async (req, res) => {
+  let userId = req.params.user_id
+  try {
+    let storiesUser = await getSelfStories(userId)
+    let itemStories = await getItemStories(userId)
+    let itemStoriesAssign = []
+    for (const k in itemStories) {
+      itemStoriesAssign.push({
+        "user": {
+          "user_id": storiesUser.user_id,
+          "fullname": storiesUser.fullname,
+          "pic": storiesUser.profile_pic,
+        },
+        "uid": itemStories[k].uid,
+        "backgroundColor": itemStories[k].backgroundColor,
+        "textColor": itemStories[k].textColor,
+        "caption": itemStories[k].caption, 
+        "media": itemStories[k].media,
+        "type": itemStories[k].type,
+        "duration": itemStories[k].duration,
+        "created": moment(itemStories[k].created).format('LT')
+      })
+    }
+    return res.json({
+      "status": res.statusCode,
+      "data": itemStoriesAssign
+    })
+  } catch(e) {
+    console.log(e)
+  }
+})
+
+app.get("/story/self/:user_id", async (req, res) => {
+  try {
+    let userId = req.params.user_id
+    let selfStories = await getSelfStories(userId)
+    let users = {}
+    let itemsDataAssign = []
+    let stories = await getStories(selfStories.user_id)
+    for (const z in stories) {
+      itemsDataAssign.push({
+        "uid": stories[z].uid,
+        "backgroundColor": stories[z].backgroundColor,
+        "textColor": stories[z].textColor,
+        "caption": stories[z].caption, 
+        "media": stories[z].media,
+        "type": stories[z].type,
+        "duration": stories[z].duration,
+        "user": {
+          "uid": selfStories.uid,
+          "fullname": selfStories.fullname,
+          "pic": selfStories.profile_pic,
+          "created": moment(stories[z].created).format('LT')
+        },
+      }) 
+    }
+    users = {
+      "user": {
+        "uid": selfStories.user_id,
+        "fullname": selfStories.fullname,
+        "pic": selfStories.profile_pic,
+        "created": moment(selfStories.created).format('LT')
+      },
+      "item_count": stories.length,
+      "items": itemsDataAssign
+    }
+    return res.json({
+      "status": res.statusCode,
+      "data": users
+    })
   } catch(e) {
     console.log(e)
   }
@@ -333,6 +365,28 @@ function getUsersHog(userId) {
       }
     })
   })
+}
+
+function getItemStories(userId) {
+  return new Promise((resolve, reject) => {
+    const query = `SELECT DISTINCT a.uid, a.backgroundColor, a.textColor, a.caption, a.media, 
+    b.name AS type, a.duration, p.fullname, p.address, p.profile_pic, p.user_id, 
+    c.created_at AS created  
+    FROM stories a 
+    INNER JOIN story_types b ON a.type = b.id
+    INNER JOIN user_stories c ON a.uid = c.story_uid
+    INNER JOIN community_hog.profiles p ON p.user_id = c.user_id 
+    WHERE p.user_id = '${userId}'
+    GROUP BY c.uid
+    ORDER BY c.created_at ASC`
+    conn.query(query, (e, res) => {
+      if(e) {
+        reject(new Error(e))
+      } else {
+        resolve(res)
+      }
+    })
+  }) 
 }
 
 function getInboxStories(userId) {
