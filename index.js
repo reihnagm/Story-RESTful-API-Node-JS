@@ -173,6 +173,7 @@ app.get("/story/self/:user_id", async (req, res) => {
         "pic": selfStories.profile_pic,
         "created": moment(selfStories.created).format('LT')
       },
+      "item_count": stories.length,
       "items": itemsDataAssign
     }
     return res.json({
