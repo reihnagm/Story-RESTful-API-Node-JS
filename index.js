@@ -142,6 +142,48 @@ app.put("/story/inbox/:user_id", async (req, res) => {
   }
 })
 
+app.get("/story/self/:user_id", async (req, res) => {
+  try {
+    let userId = req.params.user_id
+    let selfStories = await getSelfStories(userId)
+    let users = {}
+    let itemsDataAssign = []
+    let stories = await getStories(selfStories.user_id)
+    for (const z in stories) {
+      itemsDataAssign.push({
+        "uid": stories[z].uid,
+        "backgroundColor": stories[z].backgroundColor,
+        "textColor": stories[z].textColor,
+        "caption": stories[z].caption, 
+        "media": stories[z].media,
+        "type": stories[z].type,
+        "duration": stories[z].duration,
+        "user": {
+          "uid": selfStories.uid,
+          "fullname": selfStories.fullname,
+          "pic": selfStories.profile_pic,
+          "created": moment(stories[z].created).format('LT')
+        },
+      }) 
+    }
+    users = {
+      "user": {
+        "uid": selfStories.user_id,
+        "fullname": selfStories.fullname,
+        "pic": selfStories.profile_pic,
+        "created": moment(selfStories.created).format('LT')
+      },
+      "items": itemsDataAssign
+    }
+    return res.json({
+      "status": res.statusCode,
+      "data": users
+    })
+  } catch(e) {
+    console.log(e)
+  }
+})
+
 app.get("/story", async (req, res) => {
   try {
     let storiesUser = await getStoriesUser()
@@ -326,6 +368,24 @@ function storeInboxStories(uid, userId, storyUid) {
         reject(new Error(e))
       } else {
         resolve(res)
+      }
+    })
+  })
+}
+
+function getSelfStories(userId) {
+  return new Promise((resolve, reject) => {
+    const query = `SELECT DISTINCT p.user_id, p.fullname, p.profile_pic, MAX(s.created_at) AS created
+    FROM community_hog.profiles p 
+    INNER JOIN user_stories s ON s.user_id  = p.user_id
+    WHERE s.user_id  = '${userId}'
+    GROUP BY p.user_id
+    ORDER BY MAX(s.created_at) DESC`
+    conn.query(query, (e, res) => {
+      if(e) {
+        reject(new Error(e))
+      } else {
+        resolve(res[0])
       }
     })
   })
