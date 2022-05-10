@@ -245,38 +245,49 @@ app.get("/story/self/:user_id", async (req, res) => {
     let selfStories = await getSelfStories(userId)
     let users = {}
     let itemsDataAssign = []
-    let stories = await getStories(selfStories.user_id)
-    for (const z in stories) {
-      itemsDataAssign.push({
-        "uid": stories[z].uid,
-        "backgroundColor": stories[z].backgroundColor,
-        "textColor": stories[z].textColor,
-        "caption": stories[z].caption, 
-        "media": stories[z].media,
-        "type": stories[z].type,
-        "duration": stories[z].duration,
+    if(selfStories != null) {
+      let stories = await getStories(selfStories.user_id)
+      for (const z in stories) {
+        itemsDataAssign.push({
+          "uid": stories[z].uid,
+          "backgroundColor": stories[z].backgroundColor,
+          "textColor": stories[z].textColor,
+          "caption": stories[z].caption, 
+          "media": stories[z].media,
+          "type": stories[z].type,
+          "duration": stories[z].duration,
+          "user": {
+            "uid": selfStories.uid,
+            "fullname": selfStories.fullname,
+            "pic": selfStories.profile_pic,
+            "created": moment(stories[z].created).format('LT')
+          },
+        }) 
+      }
+      users = {
         "user": {
-          "uid": selfStories.uid,
+          "uid": selfStories.user_id,
           "fullname": selfStories.fullname,
           "pic": selfStories.profile_pic,
-          "created": moment(stories[z].created).format('LT')
+          "created": moment(selfStories.created).format('LT')
         },
-      }) 
+        "item_count": stories.length,
+        "items": itemsDataAssign
+      }
+      return res.json({
+        "status": res.statusCode,
+        "data": users
+      })
+    } else {
+      return res.json({
+        "status": res.statusCode,
+        "data": {
+          "user": {},
+          "item_count": 0,
+          "items": []
+        }
+      })
     }
-    users = {
-      "user": {
-        "uid": selfStories.user_id,
-        "fullname": selfStories.fullname,
-        "pic": selfStories.profile_pic,
-        "created": moment(selfStories.created).format('LT')
-      },
-      "item_count": stories.length,
-      "items": itemsDataAssign
-    }
-    return res.json({
-      "status": res.statusCode,
-      "data": users
-    })
   } catch(e) {
     console.log(e)
   }
