@@ -318,6 +318,11 @@ app.post("/story/store", async (req, res) => {
 
   try {
     await userStoryStore(userStoryUid, userId, storyUid, backgroundColor, textColor, caption, media, type, duration)
+    let users = await getUsersHog(userId)
+    for (const k in users) {
+      let userId = users[k].user_id
+      await storeInboxStories(uuidv4(), userId, storyUid)
+    }
     return res.json({
       "status": res.statusCode,
       "data": {
@@ -334,6 +339,7 @@ app.post("/story/store", async (req, res) => {
   } catch(e) {
     console.log(e)
   }
+
 })
 
 app.post("/story/store/inbox", async (req, res) => {
@@ -353,7 +359,6 @@ app.post("/story/store/inbox", async (req, res) => {
   } catch(e) {
     console.log(e)
   }
-
 })
 
 // MEDIA
